@@ -1,3 +1,611 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <h1> Helo Fridaa this is your site</h1>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>fridaa</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #0a0a0a;
+    overflow: hidden;
+    width: 100vw;
+    height: 100vh;
+    font-family: 'Fredoka One', cursive;
+    cursor: none;
+  }
+
+  /* Rainbow trail cursor */
+  .cursor {
+    position: fixed;
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9999;
+    mix-blend-mode: screen;
+    transition: transform 0.05s;
+  }
+
+  /* Canvas for background chaos */
+  #bg { position: fixed; top:0; left:0; width:100%; height:100%; z-index: 0; }
+
+  /* The main stage */
+  #stage {
+    position: fixed; top:0; left:0;
+    width:100%; height:100%;
+    z-index: 10;
+  }
+
+  .letter {
+    position: absolute;
+    font-family: 'Fredoka One', cursive;
+    font-size: 120px;
+    line-height: 1;
+    will-change: transform;
+    user-select: none;
+    cursor: none;
+    filter: drop-shadow(0 0 20px currentColor);
+    transition: filter 0.1s;
+  }
+
+  .letter:hover {
+    filter: drop-shadow(0 0 40px white) drop-shadow(0 0 80px white);
+    transform: scale(1.5) rotate(0deg) !important;
+  }
+
+  /* Sparkles */
+  .spark {
+    position: fixed;
+    pointer-events: none;
+    z-index: 9998;
+    border-radius: 50%;
+    animation: sparkle 0.8s forwards;
+  }
+
+  @keyframes sparkle {
+    0%   { transform: scale(1) translate(0,0); opacity: 1; }
+    100% { transform: scale(0) translate(var(--dx), var(--dy)); opacity: 0; }
+  }
+
+  /* Disco ball overlay */
+  #disco {
+    position: fixed; top: -50%; left: -50%;
+    width: 200%; height: 200%;
+    background: conic-gradient(
+      transparent 0deg, rgba(255,255,255,0.03) 1deg,
+      transparent 2deg, rgba(255,255,255,0.03) 3deg,
+      transparent 4deg
+    );
+    animation: spin 8s linear infinite;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+  }
+
+  /* Rainbow streak lines */
+  .streak {
+    position: fixed;
+    height: 3px;
+    border-radius: 2px;
+    pointer-events: none;
+    z-index: 2;
+    animation: streakAnim linear forwards;
+  }
+
+  @keyframes streakAnim {
+    0%   { opacity: 1; transform: scaleX(1); }
+    100% { opacity: 0; transform: scaleX(0); }
+  }
+
+  /* Wobbly text effect via SVG filter */
+  #svgfilter {
+    position: fixed; width:0; height:0;
+  }
+
+  /* Speech bubbles */
+  .bubble {
+    position: fixed;
+    background: white;
+    border-radius: 20px;
+    padding: 8px 16px;
+    font-size: 22px;
+    font-family: 'Fredoka One', cursive;
+    color: #111;
+    pointer-events: none;
+    z-index: 20;
+    animation: bubblePop 1.5s forwards;
+    white-space: nowrap;
+  }
+  .bubble::after {
+    content: '';
+    position: absolute;
+    bottom: -12px; left: 20px;
+    border: 8px solid transparent;
+    border-top-color: white;
+    border-bottom: none;
+  }
+
+  @keyframes bubblePop {
+    0%   { transform: scale(0) rotate(-5deg); opacity:1; }
+    15%  { transform: scale(1.2) rotate(3deg); opacity:1; }
+    25%  { transform: scale(1) rotate(0deg); opacity:1; }
+    70%  { transform: scale(1) translateY(0); opacity:1; }
+    100% { transform: scale(0.8) translateY(-40px); opacity:0; }
+  }
+
+  /* Emoji shower */
+  .emoji {
+    position: fixed;
+    font-size: 40px;
+    pointer-events: none;
+    z-index: 15;
+    animation: emojiDrop linear forwards;
+  }
+
+  @keyframes emojiDrop {
+    0%   { transform: translateY(-80px) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(110vh) rotate(720deg); opacity: 0.5; }
+  }
+
+  /* Pulse rings */
+  .ring {
+    position: fixed;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 3;
+    animation: ringOut 1s ease-out forwards;
+    border-width: 3px;
+    border-style: solid;
+  }
+
+  @keyframes ringOut {
+    0%   { transform: translate(-50%,-50%) scale(0); opacity: 0.8; }
+    100% { transform: translate(-50%,-50%) scale(6); opacity: 0; }
+  }
+
+  /* Scream text */
+  .scream {
+    position: fixed;
+    font-family: 'Fredoka One', cursive;
+    pointer-events: none;
+    z-index: 25;
+    animation: screamAnim 1s forwards;
+    text-shadow: 0 0 30px currentColor;
+  }
+
+  @keyframes screamAnim {
+    0%   { transform: scale(0) rotate(-20deg); opacity:1; }
+    40%  { transform: scale(1.4) rotate(5deg); opacity:1; }
+    60%  { transform: scale(1.1) rotate(-2deg); opacity:1; }
+    100% { transform: scale(0.9) translateY(-60px); opacity:0; }
+  }
+</style>
+</head>
+<body>
+
+<svg id="svgfilter">
+  <defs>
+    <filter id="wobble">
+      <feTurbulence id="turb" type="fractalNoise" baseFrequency="0.02" numOctaves="3" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="15" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+  </defs>
+</svg>
+
+<canvas id="bg"></canvas>
+<div id="disco"></div>
+<div id="stage"></div>
+
+<script>
+// ─── Globals ───────────────────────────────────────────────────────────────
+const W = () => window.innerWidth;
+const H = () => window.innerHeight;
+const LETTERS = ['f','r','i','d','a','a'];
+const RAINBOW = ['#ff0040','#ff6a00','#ffde00','#00e676','#00b0ff','#aa00ff','#ff4081','#ff6d00'];
+const FUN = ['WHEEE!','BOING!','ZOOP!','YEET!','WOW!','OMG!','WACKY!','ZOOM!','POP!','SPIN!','WAHOO!'];
+const EMOJIS = ['🌈','✨','💥','🎉','🔥','⚡','🎊','💫','🌟','🎈','🤪','💃','🕺','🦄','🍭'];
+
+let letters = [];
+let mouse = { x: W()/2, y: H()/2 };
+let hue = 0;
+let frame = 0;
+
+// ─── Canvas BG (rainbow orbs) ──────────────────────────────────────────────
+const canvas = document.getElementById('bg');
+const ctx = canvas.getContext('2d');
+
+function resizeCanvas() {
+  canvas.width = W();
+  canvas.height = H();
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+let orbs = Array.from({length: 8}, (_, i) => ({
+  x: Math.random() * W(),
+  y: Math.random() * H(),
+  r: 120 + Math.random() * 180,
+  hue: (i / 8) * 360,
+  vx: (Math.random() - 0.5) * 2,
+  vy: (Math.random() - 0.5) * 2,
+  speed: 0.3 + Math.random() * 0.7
+}));
+
+function drawBG() {
+  ctx.fillStyle = 'rgba(10,10,10,0.18)';
+  ctx.fillRect(0, 0, W(), H());
+
+  orbs.forEach(o => {
+    o.hue = (o.hue + 0.5) % 360;
+    o.x += o.vx * o.speed;
+    o.y += o.vy * o.speed;
+    if (o.x < -o.r || o.x > W()+o.r) o.vx *= -1;
+    if (o.y < -o.r || o.y > H()+o.r) o.vy *= -1;
+
+    const g = ctx.createRadialGradient(o.x, o.y, 0, o.x, o.y, o.r);
+    g.addColorStop(0, `hsla(${o.hue}, 100%, 60%, 0.35)`);
+    g.addColorStop(1, `hsla(${o.hue}, 100%, 60%, 0)`);
+    ctx.beginPath();
+    ctx.arc(o.x, o.y, o.r, 0, Math.PI*2);
+    ctx.fillStyle = g;
+    ctx.fill();
+  });
+}
+
+// ─── Letter objects ────────────────────────────────────────────────────────
+const stage = document.getElementById('stage');
+
+LETTERS.forEach((ch, i) => {
+  const el = document.createElement('div');
+  el.className = 'letter';
+  el.textContent = ch;
+  el.dataset.i = i;
+  stage.appendChild(el);
+
+  const angle = (i / LETTERS.length) * Math.PI * 2;
+  letters.push({
+    el,
+    x: W()/2 + Math.cos(angle) * 200,
+    y: H()/2 + Math.sin(angle) * 120,
+    vx: (Math.random()-0.5)*8,
+    vy: (Math.random()-0.5)*8,
+    rot: 0,
+    rotV: (Math.random()-0.5)*6,
+    scale: 1,
+    scaleV: 0,
+    hue: (i/LETTERS.length)*360,
+    mode: 'bounce',    // bounce | orbit | scatter | gather | spin
+    orbitAngle: angle,
+    orbitR: 180,
+    orbitSpeed: 0.02 + Math.random()*0.02,
+    wobble: Math.random()*Math.PI*2,
+    wobbleSpeed: 0.05 + Math.random()*0.05,
+    size: 80 + Math.random()*80,
+    bounceCount: 0,
+  });
+});
+
+// ─── Behaviours ────────────────────────────────────────────────────────────
+let behavMode = 'bounce';
+let modeTimer = 0;
+const MODES = ['bounce','orbit','scatter','gather','snake','spin'];
+let modeIdx = 0;
+
+function setMode(m) {
+  behavMode = m;
+  letters.forEach((l, i) => {
+    l.mode = m;
+    if (m === 'scatter') {
+      l.vx = (Math.random()-0.5)*25;
+      l.vy = (Math.random()-0.5)*25;
+    }
+    if (m === 'gather') {
+      l.vx *= 0.1; l.vy *= 0.1;
+    }
+    if (m === 'orbit') {
+      l.orbitAngle = (i/LETTERS.length)*Math.PI*2;
+      l.orbitR = 130 + Math.random()*100;
+    }
+    if (m === 'spin') {
+      const a = (i/LETTERS.length)*Math.PI*2;
+      l.orbitAngle = a;
+    }
+  });
+}
+
+// ─── Physics update ────────────────────────────────────────────────────────
+function updateLetters() {
+  frame++;
+  hue = (hue + 1) % 360;
+  modeTimer++;
+
+  // switch mode every ~200 frames
+  if (modeTimer > 200 + Math.random()*100) {
+    modeTimer = 0;
+    modeIdx = (modeIdx + 1) % MODES.length;
+    setMode(MODES[modeIdx]);
+    if (Math.random() < 0.5) spawnBubble();
+    if (Math.random() < 0.4) emojiShower();
+  }
+
+  letters.forEach((l, i) => {
+    l.hue = (l.hue + 1.2) % 360;
+    l.wobble += l.wobbleSpeed;
+
+    const sz = l.el.getBoundingClientRect();
+    const w = sz.width || 100;
+    const h = sz.height || 110;
+
+    if (l.mode === 'bounce') {
+      l.vx += (Math.random()-0.5)*0.5;
+      l.vy += 0.3; // gravity
+      l.x += l.vx;
+      l.y += l.vy;
+      l.rot += l.rotV;
+      l.rotV *= 0.99;
+
+      // walls
+      if (l.x < 0) { l.x=0; l.vx = Math.abs(l.vx)*1.05; l.rotV=(Math.random()-0.5)*10; spawnRing(l.x, l.y, l.hue); }
+      if (l.x > W()-w) { l.x=W()-w; l.vx = -Math.abs(l.vx)*1.05; l.rotV=(Math.random()-0.5)*10; spawnRing(l.x+w, l.y, l.hue); }
+      if (l.y < 0) { l.y=0; l.vy = Math.abs(l.vy)*0.9; }
+      if (l.y > H()-h) {
+        l.y = H()-h;
+        l.vy = -Math.abs(l.vy) * (0.75 + Math.random()*0.3);
+        l.vx += (Math.random()-0.5)*4;
+        l.rotV = (Math.random()-0.5)*12;
+        l.bounceCount++;
+        spawnRing(l.x + w/2, l.y + h, l.hue);
+        if (Math.random()<0.15) spawnScream(l.x, l.y);
+      }
+      // speed limit
+      const sp = Math.sqrt(l.vx*l.vx+l.vy*l.vy);
+      if (sp > 22) { l.vx*=22/sp; l.vy*=22/sp; }
+
+    } else if (l.mode === 'orbit') {
+      l.orbitAngle += l.orbitSpeed * (i%2===0?1:-1);
+      l.orbitR += Math.sin(frame*0.02)*0.5;
+      l.x = W()/2 + Math.cos(l.orbitAngle)*l.orbitR - w/2;
+      l.y = H()/2 + Math.sin(l.orbitAngle)*(l.orbitR*0.5) - h/2;
+      l.rot += 3;
+
+    } else if (l.mode === 'scatter') {
+      l.vx *= 0.97;
+      l.vy *= 0.97;
+      l.x += l.vx;
+      l.y += l.vy;
+      l.rot += l.rotV;
+      if (l.x < -200 || l.x > W()+200 || l.y < -200 || l.y > H()+200) {
+        l.x = W()/2; l.y = H()/2;
+        l.vx = (Math.random()-0.5)*20;
+        l.vy = (Math.random()-0.5)*20;
+      }
+
+    } else if (l.mode === 'gather') {
+      const tx = W()/2 - 300 + i*110;
+      const ty = H()/2 - 60;
+      l.vx += (tx - l.x)*0.05;
+      l.vy += (ty - l.y)*0.05;
+      l.vx *= 0.85;
+      l.vy *= 0.85;
+      l.x += l.vx;
+      l.y += l.vy;
+      l.rot += (0 - l.rot)*0.1;
+
+    } else if (l.mode === 'snake') {
+      const t = frame * 0.04 + i * 0.6;
+      const tx = W()*0.5 + Math.cos(t) * (W()*0.4 - i*30);
+      const ty = H()*0.5 + Math.sin(t*1.7 + i*0.3) * (H()*0.35);
+      l.x += (tx - l.x) * 0.12;
+      l.y += (ty - l.y) * 0.12;
+      l.rot = Math.sin(t)*30;
+
+    } else if (l.mode === 'spin') {
+      l.orbitAngle += 0.06 + i*0.008;
+      const r = 220 + Math.sin(frame*0.03)*50;
+      l.x = W()/2 + Math.cos(l.orbitAngle)*r - w/2;
+      l.y = H()/2 + Math.sin(l.orbitAngle)*r*0.5 - h/2;
+      l.rot += 8;
+    }
+
+    // wobble size
+    const wobbleSz = l.size + Math.sin(l.wobble)*20;
+    l.el.style.fontSize = wobbleSz + 'px';
+    l.el.style.left = l.x + 'px';
+    l.el.style.top  = l.y + 'px';
+    l.el.style.transform = `rotate(${l.rot}deg) scale(${1 + Math.sin(l.wobble)*0.12})`;
+    l.el.style.color = `hsl(${l.hue}, 100%, 60%)`;
+    l.el.style.textShadow = `0 0 30px hsl(${l.hue},100%,60%), 0 0 60px hsl(${(l.hue+60)%360},100%,50%)`;
+    l.el.style.filter = `drop-shadow(0 0 15px hsl(${l.hue},100%,50%))`;
+  });
+}
+
+// ─── Particles / FX ────────────────────────────────────────────────────────
+function spawnRing(x, y, hue) {
+  const el = document.createElement('div');
+  el.className = 'ring';
+  el.style.left = x+'px';
+  el.style.top  = y+'px';
+  el.style.width = '60px';
+  el.style.height = '60px';
+  el.style.borderColor = `hsl(${hue},100%,60%)`;
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(), 1000);
+}
+
+function spawnBubble() {
+  const txt = FUN[Math.floor(Math.random()*FUN.length)];
+  const el = document.createElement('div');
+  el.className = 'bubble';
+  el.textContent = txt;
+  el.style.left = (50 + Math.random()*(W()-200))+'px';
+  el.style.top  = (50 + Math.random()*(H()-150))+'px';
+  el.style.color = `hsl(${Math.random()*360},90%,35%)`;
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(), 1600);
+}
+
+function spawnScream(x, y) {
+  const txt = FUN[Math.floor(Math.random()*FUN.length)];
+  const el = document.createElement('div');
+  el.className = 'scream';
+  el.textContent = txt;
+  el.style.left = x+'px';
+  el.style.top  = y+'px';
+  el.style.fontSize = (28+Math.random()*30)+'px';
+  el.style.color = `hsl(${Math.random()*360},100%,65%)`;
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(), 1000);
+}
+
+function spawnStreak(x, y) {
+  const el = document.createElement('div');
+  el.className = 'streak';
+  const len = 80+Math.random()*200;
+  el.style.width = len+'px';
+  el.style.left = x+'px';
+  el.style.top  = y+'px';
+  el.style.background = `linear-gradient(90deg, hsl(${Math.random()*360},100%,60%), transparent)`;
+  el.style.transform = `rotate(${Math.random()*360}deg)`;
+  el.style.animationDuration = (0.3+Math.random()*0.5)+'s';
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(), 800);
+}
+
+function spawnSpark(x, y) {
+  for (let i=0; i<6; i++) {
+    const el = document.createElement('div');
+    el.className = 'spark';
+    const size = 4+Math.random()*10;
+    el.style.width = size+'px';
+    el.style.height = size+'px';
+    el.style.left = x+'px';
+    el.style.top  = y+'px';
+    el.style.background = `hsl(${Math.random()*360},100%,65%)`;
+    const ang = Math.random()*Math.PI*2;
+    const d = 30+Math.random()*80;
+    el.style.setProperty('--dx', Math.cos(ang)*d+'px');
+    el.style.setProperty('--dy', Math.sin(ang)*d+'px');
+    el.style.animationDuration = (0.5+Math.random()*0.5)+'s';
+    document.body.appendChild(el);
+    setTimeout(()=>el.remove(), 900);
+  }
+}
+
+function emojiShower() {
+  for (let i=0; i<12; i++) {
+    const el = document.createElement('div');
+    el.className = 'emoji';
+    el.textContent = EMOJIS[Math.floor(Math.random()*EMOJIS.length)];
+    el.style.left = (Math.random()*W())+'px';
+    el.style.top = '-80px';
+    el.style.fontSize = (24+Math.random()*40)+'px';
+    el.style.animationDuration = (2+Math.random()*3)+'s';
+    el.style.animationDelay = (Math.random()*1)+'s';
+    document.body.appendChild(el);
+    setTimeout(()=>el.remove(), 6000);
+  }
+}
+
+// ─── Cursor trail ──────────────────────────────────────────────────────────
+let cursorHue = 0;
+document.addEventListener('mousemove', e => {
+  mouse.x = e.clientX;
+  mouse.y = e.clientY;
+  cursorHue = (cursorHue+8)%360;
+
+  // trail dot
+  const dot = document.createElement('div');
+  dot.className = 'cursor';
+  dot.style.left = (e.clientX-9)+'px';
+  dot.style.top  = (e.clientY-9)+'px';
+  dot.style.background = `hsl(${cursorHue},100%,65%)`;
+  dot.style.boxShadow = `0 0 12px hsl(${cursorHue},100%,60%)`;
+  document.body.appendChild(dot);
+  dot.animate([
+    {opacity:1, transform:'scale(1)'},
+    {opacity:0, transform:'scale(0)'}
+  ], {duration:500, easing:'ease-out'}).onfinish = ()=>dot.remove();
+
+  if (Math.random()<0.3) spawnStreak(e.clientX, e.clientY);
+});
+
+document.addEventListener('click', e => {
+  spawnSpark(e.clientX, e.clientY);
+  spawnBubble();
+  spawnRing(e.clientX, e.clientY, Math.random()*360);
+  for (let i=0;i<3;i++) spawnStreak(e.clientX, e.clientY);
+  // fling nearest letter
+  let nearest = letters[0];
+  let nd = Infinity;
+  letters.forEach(l=>{
+    const d = Math.hypot(l.x-e.clientX, l.y-e.clientY);
+    if (d<nd){nd=d;nearest=l;}
+  });
+  nearest.vx = (nearest.x - e.clientX)*-0.5 + (Math.random()-0.5)*20;
+  nearest.vy = (nearest.y - e.clientY)*-0.5 + (Math.random()-0.5)*20;
+  nearest.rotV = (Math.random()-0.5)*20;
+  nearest.mode = 'bounce';
+});
+
+// ─── Turbulence animation ─────────────────────────────────────────────────
+const turb = document.getElementById('turb');
+let turbFrame = 0;
+function animateTurb() {
+  turbFrame += 0.005;
+  if (turb) turb.setAttribute('baseFrequency', (0.02 + Math.sin(turbFrame)*0.01).toFixed(4));
+}
+
+// ─── Random events ─────────────────────────────────────────────────────────
+setInterval(()=>{
+  if (Math.random()<0.4) spawnBubble();
+  if (Math.random()<0.2) emojiShower();
+  if (Math.random()<0.3) {
+    const l = letters[Math.floor(Math.random()*letters.length)];
+    l.vx = (Math.random()-0.5)*20;
+    l.vy = -10 - Math.random()*10;
+    l.rotV = (Math.random()-0.5)*15;
+    l.mode = 'bounce';
+  }
+}, 1200);
+
+// random screams
+setInterval(()=>{
+  if (Math.random()<0.5) {
+    const l = letters[Math.floor(Math.random()*letters.length)];
+    spawnScream(l.x, l.y);
+  }
+}, 1800);
+
+// kick letters with gravity bursts
+setInterval(()=>{
+  letters.forEach(l=>{
+    if (Math.random()<0.25) {
+      l.vy -= 8+Math.random()*8;
+      l.vx += (Math.random()-0.5)*10;
+    }
+  });
+}, 2500);
+
+// ─── Main loop ─────────────────────────────────────────────────────────────
+function loop() {
+  drawBG();
+  updateLetters();
+  animateTurb();
+  requestAnimationFrame(loop);
+}
+
+// initial mode
+setMode('bounce');
+letters.forEach(l=>{ l.vy=-8; l.vx=(Math.random()-0.5)*10; });
+setTimeout(emojiShower, 500);
+loop();
+</script>
+</body>
+</html>
